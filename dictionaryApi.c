@@ -22,7 +22,7 @@ void main()
     while (1)
     {
 	printf("Enter '0' to exit.\n");
-	printf("Enter a word to get it's meaning: ");
+	printf("Enter a word to get it's meaning and to play pronunciation: ");
 	scanf("%s", word);
 	if (strcmp(word, "0") == 0)
 	{
@@ -55,7 +55,7 @@ void main()
 	fgets(dictionaryApiResponse, fileSize, fpDictionary);
 	audioUrl = malloc(MAXAUDIOURLLENGTH);
 	audioUrl = getAudioUrl(dictionaryApiResponse);
-	if (strcmp(audioUrl, "Not found") == 0)
+	if (strcmp(audioUrl, "Not found") == 0 || strlen(audioUrl) < 10)
 	{
 		printf("%s pronunciation not found in the dictionary.\n", word);
 	}
