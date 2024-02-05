@@ -69,7 +69,6 @@ void main()
 
 char* getAudioUrl(char *dictionaryApiResponse)
 {
-    int isAudioFound = 0;
     strcpy(audioUrl, "Not found");
 
     char *token = strtok(dictionaryApiResponse, "\"");
@@ -83,32 +82,14 @@ char* getAudioUrl(char *dictionaryApiResponse)
             if (strlen(audioUrl) < 10) 
             {
 	        token = strtok(NULL, "\"");
-	        isAudioFound = 1;
                 continue;
             } 
             else 
             {
-	        isAudioFound = 0;
 	        break;
             }
         }
         token = strtok(NULL, "\"");
-    }
-    if (isAudioFound == 1)
-    {
-    	fseek(fpDictionary, 0, SEEK_SET);
-	fgets(dictionaryApiResponse, fileSize, fpDictionary);
-        char *token = strtok(dictionaryApiResponse, ":");
-        while (token != NULL) 
-        {
-            if (strcmp(token, "[{\"audio\"") == 0) 
-            {
-                token = strtok(NULL, "\"");
-                strcpy(audioUrl, token);
-                break;
-            }
-            token = strtok(NULL, ":");
-        }
     }
     return audioUrl;
 }
