@@ -102,9 +102,17 @@ char* getDefinition(char *dictionaryApiResponse)
     {
         if (strcmp(token, "[{\"definition\"") == 0) 
         {
-            token = strtok(NULL, "\";.");
+            token = strtok(NULL, ";.\"");
             strcpy(definition, token);
-            break;
+            if (strlen(definition) < 20) 
+            {
+		token = strtok(NULL, ":");
+                continue;
+            } 
+            else 
+            {
+	        break;
+            }
         }
         token = strtok(NULL, ":");
     }
