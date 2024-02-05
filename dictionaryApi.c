@@ -97,16 +97,17 @@ char* getAudioUrl(char *dictionaryApiResponse)
 char* getDefinition(char *dictionaryApiResponse)
 {
     strcpy(definition, "Not found");
-    char *token = (char *)strtok(dictionaryApiResponse, ":");
+    char *token = (char *)strtok(dictionaryApiResponse, "\"");
     while (token != NULL) 
     {
-        if (strcmp(token, "[{\"definition\"") == 0) 
+        if (strcmp(token, "definition") == 0) 
         {
+            token = strtok(NULL, ";.\"");
             token = strtok(NULL, ";.\"");
             strcpy(definition, token);
             if (strlen(definition) < 20) 
             {
-		token = strtok(NULL, ":");
+		token = strtok(NULL, "\"");
                 continue;
             } 
             else 
@@ -114,7 +115,7 @@ char* getDefinition(char *dictionaryApiResponse)
 	        break;
             }
         }
-        token = strtok(NULL, ":");
+        token = strtok(NULL, "\"");
     }
     return definition;
 }
