@@ -324,6 +324,8 @@ void sortItemsLinkedList(int option, char *sortByAttributeName)
         }
     } while (swapped);
 
-    printf("Items sorted successfully.\n");
+    printf("Items sorted by %s successfully.\n", sortByAttributeName);
     showAllItems();
+    startNode = NULL; 
+    loadItemsLinkedList();
 }
