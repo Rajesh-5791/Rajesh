@@ -6,7 +6,9 @@
 
 #define MAX_ID_LENGTH 20
 #define MAX_DESCRIPTION_LENGTH 50
-#define DATA_FILE "items4.dat"
+#define SORT_BY_ATTRIBUTE_NAME_LENGTH 10
+#define ITEM_NOT_FOUND_MESSAGE printf("Item not found with id: %s\n", targetItemId)
+#define DATA_FILE "items.dat"
 
 typedef struct ItemDetails 
 {
@@ -30,29 +32,39 @@ void updateItemPrice(char *);
 void deleteItem(char *);
 void searchItem(char *);
 char *getTargetItemId();
-void saveLinkedList();
-void loadLinkedList();
+void saveItemsLinkedList();
+void loadItemsLinkedList();
 ItemDetails getItemDetails();
-int showSortMenu();
-void sortItems(int option);
+void showSortMenu();
+void sortItemsLinkedList(int option, char *);
 
 int main() 
 {
-    loadLinkedList();
+    loadItemsLinkedList();
     showMenu();
     return 0;
 }
 
-int showSortMenu()
+void showSortMenu()
 {
     int sortOption;
+    char *sortByAttributeName = (char *)malloc(SORT_BY_ATTRIBUTE_NAME_LENGTH);
     printf("Sort menu: \n");
     printf("1. Sort by id\n");
     printf("2. Sort by price\n\n");
 
     printf("Enter your option: ");
     scanf("%d", &sortOption);
-    return sortOption;
+    switch (sortOption)
+    {
+        case 1: sortByAttributeName = "id";
+            sortItemsLinkedList(sortOption, sortByAttributeName);
+            break;
+        case 2: sortByAttributeName = "price";
+            sortItemsLinkedList(sortOption, sortByAttributeName);
+            break;
+        default : printf("You entered Invalid choice.\n");
+    }
 }
 
 void showMenu() 
@@ -60,7 +72,7 @@ void showMenu()
     int choice;
     do 
     {
-        printf("====== Rajesh Mart ======\n");
+        printf("\n====== Rajesh Mart ======\n");
         printf("0. Exit\n");
         printf("1. Add an item\n");
         printf("2. Show all items\n");
@@ -76,7 +88,7 @@ void showMenu()
         switch (choice) 
         {
             case 0:
-                printf("Exiting...\n");
+                printf("You chose exit.\n");
                 break;
             case 1:
                 addItem();
@@ -94,7 +106,7 @@ void showMenu()
                 searchItem(getTargetItemId());
                 break;
             case 6: 
-                sortItems(showSortMenu());
+                showSortMenu();
                 break;
             default:
                 printf("Invalid choice. Please try again.\n");
@@ -102,7 +114,7 @@ void showMenu()
     } while (choice != 0);
 }
 
-void saveLinkedList() 
+void saveItemsLinkedList() 
 {
     FILE *fpItems = fopen(DATA_FILE, "wb");
     ItemNode *currentNode = startNode;
@@ -114,7 +126,7 @@ void saveLinkedList()
     fclose(fpItems);
 }
 
-void loadLinkedList() 
+void loadItemsLinkedList() 
 {
     FILE *fpItems = fopen(DATA_FILE, "rb");
     ItemDetails tempItem;
@@ -157,8 +169,8 @@ void addItem()
         currentNode->nextNode = newNode;
     }
     
-    saveLinkedList();
-    printf("Item added successfully.\n");
+    saveItemsLinkedList();
+    printf("Item added successfully with id: %s\n", newNode->itemRecord.itemId);
 }
 
 void showAllItems() 
@@ -204,14 +216,14 @@ void deleteItem(char *targetItemId)
                 previousNode->nextNode = currentNode->nextNode;
             }
             free(currentNode);
-            saveLinkedList();
-            printf("Item deleted successfully.\n");
-            return;
+            saveItemsLinkedList();
+            printf("Item deleted successfully with id: %s\n", targetItemId);
+            break;
         }
         previousNode = currentNode;
         currentNode = currentNode->nextNode;
     }
-    printf("Item not found.\n");
+    ITEM_NOT_FOUND_MESSAGE;
 }
 
 char *getTargetItemId() 
@@ -248,13 +260,13 @@ void updateItemPrice(char *targetItemId)
         {
             printf("Enter the new price for the item: ");
             scanf("%f", &currentNode->itemRecord.itemPrice);
-            saveLinkedList();
+            saveItemsLinkedList();
             printf("Price updated successfully.\n");
-            return;
+            break;
         }
         currentNode = currentNode->nextNode;
     }
-    printf("Item not found.\n");
+    ITEM_NOT_FOUND_MESSAGE;
 }
 
 void searchItem(char *targetItemId)
@@ -274,42 +286,38 @@ void searchItem(char *targetItemId)
             printf("ID: %s\n", currentNode->itemRecord.itemId);
             printf("Description: %s\n", currentNode->itemRecord.itemDescription);
             printf("Price: %.2f\n", currentNode->itemRecord.itemPrice);
-            return;
+            break;
         }
         currentNode = currentNode->nextNode;
     }
-    printf("Item not found.\n");
+    ITEM_NOT_FOUND_MESSAGE;
 }
 
-void sortItems(int option)
+void sortItemsLinkedList(int option, char *sortByAttributeName)
 {
-    printf("hi\n");
     printf("Sorting items...\n");
     if (startNode == NULL)
     {
         printf("No items to sort.\n");
         return;
     }
-
-    printf("Sorting option: %d\n", option);
+    printf("You chose Sort by %s.\n", sortByAttributeName);
 
     ItemNode *currentNode;
-    ItemDetails temp;
+    ItemDetails tempNode;
     int swapped;
-
     do
     {
         swapped = 0;
         currentNode = startNode;
-
         while (currentNode->nextNode != NULL)
         {
             if ((option == 1 && strcmp(currentNode->itemRecord.itemId, currentNode->nextNode->itemRecord.itemId) > 0) ||
                 (option == 2 && currentNode->itemRecord.itemPrice > currentNode->nextNode->itemRecord.itemPrice))
             {
-                temp = currentNode->itemRecord;
+                tempNode = currentNode->itemRecord;
                 currentNode->itemRecord = currentNode->nextNode->itemRecord;
-                currentNode->nextNode->itemRecord = temp;
+                currentNode->nextNode->itemRecord = tempNode;
                 swapped = 1;
             }
             currentNode = currentNode->nextNode;
@@ -317,4 +325,5 @@ void sortItems(int option)
     } while (swapped);
 
     printf("Items sorted successfully.\n");
+    showAllItems();
 }
