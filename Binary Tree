@@ -44,17 +44,13 @@ void GetProcessMemoryUsage();
 
 int main() 
 {
-	time_t StartTime, EndTime;
-	StartTime = clock();
+    time_t StartTime, EndTime;
+    StartTime = clock();
     Operation = malloc(MAX_OPERATION_LENGTH);
     LoadBinaryTree();
     ShowMenu();
     EndTime = clock();
-	double ExecutionTimeInSeconds = (double)(EndTime - StartTime) / CLOCKS_PER_SEC;
     double ExecutionTimeInMilliseconds = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
-    double ExecutionTimeInMinutes = ExecutionTimeInSeconds / 60;
-    printf("Execution time: %.3f minutes\n", ExecutionTimeInMinutes);
-    printf("Execution time: %.3f seconds\n", ExecutionTimeInSeconds);
     printf("Execution time: %.3f milliseconds\n", ExecutionTimeInMilliseconds);
     GetProcessMemoryUsage();
     free(Operation);
@@ -77,14 +73,13 @@ char* GenerateRandomId()
 void GetProcessMemoryUsage() 
 {
     PROCESS_MEMORY_COUNTERS_EX MemoryCounters;
+    HANDLE CurrentProcess;
 
-    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) MemoryCounters, sizeof MemoryCounters))) 
+    if (GetProcessMemoryInfo(CurrentProcess, (PROCESS_MEMORY_COUNTERS*) MemoryCounters, sizeof MemoryCounters))) 
     {
         SIZE_T memoryUsedBytes = MemoryCounters.PrivateUsage;
         SIZE_T memoryUsedMB = memoryUsedBytes / (1024 * 1024);
-        SIZE_T memoryUsedKB = memoryUsedBytes / 1024;
         printf("Memory used by the process: %u bytes\n", (unsigned int)memoryUsedBytes);
-        printf("Memory used by the process: %u KB\n", (unsigned int)memoryUsedKB);
         printf("Memory used by the process: %u MB\n", (unsigned int)memoryUsedMB);
     }
     else
@@ -93,34 +88,24 @@ void GetProcessMemoryUsage()
     }
 }
 
-void LoadBinaryTree() 
+void LoadBinaryTreeRecursive(SongNode** NodePtr, FILE* FpSongs) 
 {
     SongDetails SongRecord;
-    SongNode **CurrentNodePtr, *NewSongNode, *CurrentSongNode;
-    FpSongs = fopen(DATA_FILE, "rb");
-    while (fread(&SongRecord, sizeof(SongDetails), 1, FpSongs)) 
+    if (fread(&SongRecord, sizeof(SongDetails), 1, FpSongs)) 
     {
-        NewSongNode = (SongNode *)malloc(sizeof(SongNode));
-        NewSongNode->SongRecord = SongRecord;
-        NewSongNode->LeftNode = NULL;
-        NewSongNode->RightNode = NULL;
-
-        CurrentNodePtr = &RootNode;
-
-        while (*CurrentNodePtr != NULL) 
-        {
-            CurrentSongNode = *CurrentNodePtr;
-            if (strcmp(CurrentSongNode->SongRecord.SongId, SongRecord.SongId) < 0) 
-            {
-                CurrentNodePtr = &CurrentSongNode->RightNode;
-            } 
-            else 
-            {
-                CurrentNodePtr = &CurrentSongNode->LeftNode;
-            }
-        }
-        *CurrentNodePtr = NewSongNode;
+        *NodePtr = (SongNode*)malloc(sizeof(SongNode));
+        (*NodePtr)->SongRecord = SongRecord;
+        (*NodePtr)->LeftNode = NULL;
+        (*NodePtr)->RightNode = NULL;
+        LoadBinaryTreeRecursive(&((*NodePtr)->LeftNode), FpSongs);
+        LoadBinaryTreeRecursive(&((*NodePtr)->RightNode), FpSongs);
     }
+}
+
+void LoadBinaryTree() 
+{
+    FpSongs = fopen(DATA_FILE, "rb");
+    LoadBinaryTreeRecursive(&RootNode, FpSongs);
     fclose(FpSongs);
 }
 
@@ -168,49 +153,39 @@ void GetDetails(SongDetails *Song)
     scanf("%f", &Song->SongLength);
 }
 
-void AddSong() 
+void AddSongRecursive(SongNode** NodePtr, SongDetails* NewSong) 
 {
-    SongNode* NewSongNode = (SongNode*)malloc(sizeof(SongNode));
-    GetDetails(&NewSongNode->SongRecord);
-    NewSongNode->LeftNode = NULL;
-    NewSongNode->RightNode = NULL;
-
-    SongNode *TargetNode = GetMatchingNode(RootNode, NewSongNode->SongRecord.SongId);
-    if (TargetNode != NULL)
+    if (*NodePtr == NULL) 
     {
-        strcpy(NewSongNode->SongRecord.SongId, GenerateRandomId());
+        *NodePtr = (SongNode*)malloc(sizeof(SongNode));
+        (*NodePtr)->SongRecord = *NewSong;
+        (*NodePtr)->LeftNode = NULL;
+        (*NodePtr)->RightNode = NULL;
+        return;
     }
-    if (RootNode == NULL) 
+    int compare = strcmp(NewSong->SongId, (*NodePtr)->SongRecord.SongId);
+    if (compare < 0) 
     {
-        RootNode = NewSongNode;
-    }
+        AddSongRecursive(&((*NodePtr)->LeftNode), NewSong);
+    } 
     else 
     {
-        SongNode* ParentNode = NULL;
-        SongNode* CurrentNode = RootNode;
-        while (CurrentNode != NULL) 
-        {
-            ParentNode = CurrentNode;
-            if (strcmp(NewSongNode->SongRecord.SongId, CurrentNode->SongRecord.SongId) < 0) 
-            {
-                CurrentNode = CurrentNode->LeftNode;
-            } 
-            else 
-            {
-                CurrentNode = CurrentNode->RightNode;
-            }
-        }
-        if (strcmp(NewSongNode->SongRecord.SongId, ParentNode->SongRecord.SongId) < 0) 
-        {
-            ParentNode->LeftNode = NewSongNode;
-        } 
-        else 
-        {
-            ParentNode->RightNode = NewSongNode;
-        }
+        AddSongRecursive(&((*NodePtr)->RightNode), NewSong);
     }
+}
+
+void AddSong() 
+{
+    SongDetails NewSong;
+    GetDetails(&NewSong);
+    SongNode *TargetNode = GetMatchingNode(RootNode, NewSong.SongId);
+    if (TargetNode != NULL) 
+    {
+        strcpy(NewSong.SongId, GenerateRandomId());
+    }
+    AddSongRecursive(&RootNode, &NewSong);
     Operation = "adde";
-    PrintSuccessMessage(Operation, NewSongNode->SongRecord.SongId);
+    PrintSuccessMessage(Operation, NewSong.SongId);
     SaveBinaryTree();
 }
 
@@ -268,45 +243,34 @@ SongNode* FindLeafNode(SongNode* Node)
     return Node;
 }
 
-void DeleteSong(SongNode** RootPtr, const char* SongId) 
+void DeleteSong(SongNode** CurrentPtr, const char* SongId) 
 {
-    if (*RootPtr == NULL) 
+    if (*CurrentPtr == NULL) 
     {
         printf("No Songs found.\n");
         return;
     }
-
-    SongNode* NodeToDelete = GetMatchingNode(*RootPtr, SongId);
+    SongNode* NodeToDelete = GetMatchingNode(*CurrentPtr, SongId);
     if (NodeToDelete == NULL) 
     {
         printf("Song with ID %s does not exist.\n", SongId);
         return;
     }
-
     if (NodeToDelete->LeftNode == NULL) 
     {
-        *RootPtr = NodeToDelete->RightNode;
+        *CurrentPtr = NodeToDelete->RightNode;
         free(NodeToDelete);
     } 
     else if (NodeToDelete->RightNode == NULL) 
     {
-        *RootPtr = NodeToDelete->LeftNode;
+        *CurrentPtr = NodeToDelete->LeftNode;
         free(NodeToDelete);
     } 
     else 
     {
-        if (*RootPtr == NodeToDelete) 
-        {
             SongNode* Temp = FindLeafNode(NodeToDelete->RightNode);
             strcpy(NodeToDelete->SongRecord.SongId, Temp->SongRecord.SongId);
             DeleteSong(&(NodeToDelete->RightNode), Temp->SongRecord.SongId);
-        } 
-        else 
-        {
-            SongNode* Temp = FindLeafNode(NodeToDelete->RightNode);
-            strcpy(NodeToDelete->SongRecord.SongId, Temp->SongRecord.SongId);
-            DeleteSong(&(NodeToDelete->RightNode), Temp->SongRecord.SongId);
-        }
     }
     Operation = "delete";
     PrintSuccessMessage(Operation, SongId);
