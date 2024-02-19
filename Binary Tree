@@ -249,7 +249,7 @@ SongNode* FindMinLeafNode(SongNode* Node)
     return Node;
 }
 
-void DeleteSong(SongNode** CurrentPtr, const char* SongId) 
+void DeleteSong(SongNode** CurrentPtr, char* SongId) 
 {
     if (*CurrentPtr == NULL) 
     {
@@ -262,17 +262,24 @@ void DeleteSong(SongNode** CurrentPtr, const char* SongId)
         printf("Song with ID %s does not exist.\n", SongId);
         return;
     }
-    if (NodeToDelete->LeftNode == NULL)
+    if (NodeToDelete->LeftNode == NULL && NodeToDelete->RightNode == NULL) 
     {
+        free(NodeToDelete);
+        *CurrentPtr = NULL;
+    } 
+    else if (NodeToDelete->LeftNode == NULL) 
+    {
+        SongNode* Temp = NodeToDelete;
         *CurrentPtr = NodeToDelete->RightNode;
-        free(NodeToDelete);
-    }
-    else if (NodeToDelete->RightNode == NULL)
+        free(Temp);
+    } 
+    else if (NodeToDelete->RightNode == NULL) 
     {
+        SongNode* Temp = NodeToDelete;
         *CurrentPtr = NodeToDelete->LeftNode;
-        free(NodeToDelete);
-    }
-    else
+        free(Temp);
+    } 
+    else 
     {
         SongNode* Temp = FindMinLeafNode(NodeToDelete->RightNode);
         NodeToDelete->SongRecord = Temp->SongRecord;
@@ -282,7 +289,6 @@ void DeleteSong(SongNode** CurrentPtr, const char* SongId)
     PrintSuccessMessage(Operation, SongId);
     SaveBinaryTree();
 }
-
 
 void SearchSong(const char *SongId) 
 {
