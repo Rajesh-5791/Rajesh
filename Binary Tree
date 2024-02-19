@@ -44,13 +44,17 @@ void GetProcessMemoryUsage();
 
 int main() 
 {
-    time_t StartTime, EndTime;
-    StartTime = clock();
+	time_t StartTime, EndTime;
+	StartTime = clock();
     Operation = malloc(MAX_OPERATION_LENGTH);
     LoadBinaryTree();
     ShowMenu();
     EndTime = clock();
+	double ExecutionTimeInSeconds = (double)(EndTime - StartTime) / CLOCKS_PER_SEC;
     double ExecutionTimeInMilliseconds = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
+    double ExecutionTimeInMinutes = ExecutionTimeInSeconds / 60;
+    printf("Execution time: %.3f minutes\n", ExecutionTimeInMinutes);
+    printf("Execution time: %.3f seconds\n", ExecutionTimeInSeconds);
     printf("Execution time: %.3f milliseconds\n", ExecutionTimeInMilliseconds);
     GetProcessMemoryUsage();
     free(Operation);
@@ -60,7 +64,7 @@ int main()
 char* GenerateRandomId() 
 {
     static char RandomSongId[MAX_ID_LENGTH]; 
-    srand(time(NULL));
+    // srand(time(NULL));
     int Counter;
     for (Counter = 0; Counter < MAX_ID_LENGTH; ++Counter) 
     {
@@ -72,20 +76,19 @@ char* GenerateRandomId()
 
 void GetProcessMemoryUsage() 
 {
-    PROCESS_MEMORY_COUNTERS_EX MemoryCounters;
-    HANDLE CurrentProcess;
+	PROCESS_MEMORY_COUNTERS_EX MemoryCounters;
+	HANDLE CurrentProcess = GetCurrentProcess();
 
-    if (GetProcessMemoryInfo(CurrentProcess, (PROCESS_MEMORY_COUNTERS*) MemoryCounters, sizeof MemoryCounters))) 
-    {
-        SIZE_T memoryUsedBytes = MemoryCounters.PrivateUsage;
-        SIZE_T memoryUsedMB = memoryUsedBytes / (1024 * 1024);
-        printf("Memory used by the process: %u bytes\n", (unsigned int)memoryUsedBytes);
-        printf("Memory used by the process: %u MB\n", (unsigned int)memoryUsedMB);
-    }
-    else
-    {
-        printf("Error getting process memory info.\n");
-    }
+	if (GetProcessMemoryInfo(CurrentProcess, (PROCESS_MEMORY_COUNTERS*)&MemoryCounters, sizeof(MemoryCounters)))
+	{
+	    SIZE_T memoryUsedBytes = MemoryCounters.PrivateUsage;
+	    SIZE_T memoryUsedMB = memoryUsedBytes / (1024 * 1024);
+	    printf("Memory used by the process: %u MB\n", (unsigned int)memoryUsedMB);
+	}
+	else
+	{
+	    printf("Error getting process memory info.\n");
+	}
 }
 
 void LoadBinaryTreeRecursive(SongNode** NodePtr, FILE* FpSongs) 
@@ -163,6 +166,7 @@ void AddSongRecursive(SongNode** NodePtr, SongDetails* NewSong)
         (*NodePtr)->RightNode = NULL;
         return;
     }
+
     int compare = strcmp(NewSong->SongId, (*NodePtr)->SongRecord.SongId);
     if (compare < 0) 
     {
@@ -178,11 +182,13 @@ void AddSong()
 {
     SongDetails NewSong;
     GetDetails(&NewSong);
+
     SongNode *TargetNode = GetMatchingNode(RootNode, NewSong.SongId);
     if (TargetNode != NULL) 
     {
         strcpy(NewSong.SongId, GenerateRandomId());
     }
+
     AddSongRecursive(&RootNode, &NewSong);
     Operation = "adde";
     PrintSuccessMessage(Operation, NewSong.SongId);
@@ -234,7 +240,7 @@ void UpdateSongDetails(char *SongId)
     SaveBinaryTree();
 }
 
-SongNode* FindLeafNode(SongNode* Node) 
+SongNode* FindMinLeafNode(SongNode* Node) 
 {
     while (Node->LeftNode != NULL) 
     {
@@ -256,26 +262,27 @@ void DeleteSong(SongNode** CurrentPtr, const char* SongId)
         printf("Song with ID %s does not exist.\n", SongId);
         return;
     }
-    if (NodeToDelete->LeftNode == NULL) 
+    if (NodeToDelete->LeftNode == NULL)
     {
         *CurrentPtr = NodeToDelete->RightNode;
         free(NodeToDelete);
-    } 
-    else if (NodeToDelete->RightNode == NULL) 
+    }
+    else if (NodeToDelete->RightNode == NULL)
     {
         *CurrentPtr = NodeToDelete->LeftNode;
         free(NodeToDelete);
-    } 
-    else 
+    }
+    else
     {
-            SongNode* Temp = FindLeafNode(NodeToDelete->RightNode);
-            strcpy(NodeToDelete->SongRecord.SongId, Temp->SongRecord.SongId);
-            DeleteSong(&(NodeToDelete->RightNode), Temp->SongRecord.SongId);
+        SongNode* Temp = FindMinLeafNode(NodeToDelete->RightNode);
+        NodeToDelete->SongRecord = Temp->SongRecord;
+        DeleteSong(&(NodeToDelete->RightNode), Temp->SongRecord.SongId);
     }
     Operation = "delete";
     PrintSuccessMessage(Operation, SongId);
     SaveBinaryTree();
 }
+
 
 void SearchSong(const char *SongId) 
 {
