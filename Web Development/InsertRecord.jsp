@@ -1,6 +1,6 @@
 <%-- Insert record --%>
 
-<%@ include file="/Rajesh/Jsp/ConnectDb.jsp" %>
+<%@ include file="/dRajesh/Jsp/ConnectDb.jsp" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.sql.*" %>
 <%

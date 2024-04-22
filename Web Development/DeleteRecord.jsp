@@ -1,6 +1,6 @@
 <%-- Delete record --%>
 
-<%@ include file="/Rajesh/Jsp/ConnectDb.jsp" %>
+<%@ include file="/dRajesh/Jsp/ConnectDb.jsp" %>
 <%@ page import="java.sql.*" %>
 <%
     String tableName = request.getParameter("TableName");

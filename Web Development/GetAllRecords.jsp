@@ -1,7 +1,7 @@
 <%-- Get all records --%>
 
 <%@ page import="java.sql.*" %>
-<%@ include file="/Rajesh/Jsp/ConnectDb.jsp" %>
+<%@ include file="/dRajesh/Jsp/ConnectDb.jsp" %>
 <%
     String tableName = request.getParameter("TableName");
     String fieldName = request.getParameter("FieldName");
